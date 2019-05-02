@@ -4,16 +4,30 @@
 #include <math.h>
 #include "color.h"
 
+#define	STT_CALC_WAIT		0
+#define STT_CALC_SUMA		1
+#define STT_CALC_DIFERENCIA	2
+#define STT_CALC_AGM5		3
+#define STT_CALC_SEND_MSG	4
+#define STT_CALC_RECEIVE_MSG	5
+
+
+#define CALC_SUMA	1
+#define CALC_DIFERENCIA 2
+#define CALC_AGM5	3
+
+#define OFF		0
+#define ON		1
+
 int taskCalc_state;
-int taskCalc_debugMode;
+int taskCalc_iDebugMode;
 
-float taskCalc_varNum1;
-float taskCalc_varNum2;
-float taskCalc_varResultado;
+float taskCalc_fNum1;
+float taskCalc_fNum2;
+float taskCalc_fResultado;
 
-float var_tmp_AM;
-float AM;
-float GM;
+float taskCalc_fAritmeticMean;
+float taskCalc_fGeometricMean;
 
 int cnt;
 
@@ -22,7 +36,7 @@ void taskCalc_init()
 	taskCalc_state = STT_CALC_WAIT;
 
 	// Depuración
-	taskCalc_debugModeOff();
+	taskCalc_setDebugMode(OFF);
 }
 
 void taskCalc_run()
@@ -30,7 +44,7 @@ void taskCalc_run()
 	switch(taskCalc_state)
 	{
 		case STT_CALC_WAIT:
-			if (taskCalc_debugMode)
+			if (taskCalc_iDebugMode)
 			{
 				setColorBoldCyan(); 
 				printf ("\nSTT_CALC_WAIT");
@@ -40,42 +54,45 @@ void taskCalc_run()
 			break;
 
 		case STT_CALC_SUMA:
-			taskCalc_varResultado  = taskCalc_varNum1 + taskCalc_varNum2;
+			taskCalc_fResultado  = taskCalc_fNum1 + taskCalc_fNum2;
 			
 			taskCalc_state = STT_CALC_SEND_MSG;
 			break;
 
 		case STT_CALC_DIFERENCIA:
-			taskCalc_varResultado  = taskCalc_varNum1 - taskCalc_varNum2;
+			taskCalc_fResultado  = taskCalc_fNum1 - taskCalc_fNum2;
 			
 			taskCalc_state = STT_CALC_SEND_MSG;
 			break;
 
 		case STT_CALC_AGM5:
-			AM = taskCalc_varNum1;
-			GM = taskCalc_varNum2;
- 
+
+			taskCalc_fAritmeticMean = taskCalc_fNum1;
+			taskCalc_fGeometricMean = taskCalc_fNum2;
+ 			
+			float tmp;
+
 			for(cnt = 0 ;cnt <=4 ; cnt=cnt+1)
-			{
-				var_tmp_AM = AM;
+			{ 
+				tmp = taskCalc_fAritmeticMean;
 				
-				AM = (AM + GM)/2;
-				GM = sqrt (var_tmp_AM * GM);
+				taskCalc_fAritmeticMean = (taskCalc_fAritmeticMean + taskCalc_fGeometricMean)/2;
+				taskCalc_fGeometricMean = sqrt (tmp * taskCalc_fGeometricMean);
 			}
-			taskCalc_varResultado = AM;
+			taskCalc_fResultado = taskCalc_fAritmeticMean;
 			
 			taskCalc_state = STT_CALC_SEND_MSG;
 			break;
 		
 		case STT_CALC_SEND_MSG:
-			if(taskCalc_debugMode)
+			if(taskCalc_iDebugMode)
 			{
 				char* tmp_sFormat = "\nSTT_CALC_SEND_MESG float %.4f";
 				setColorBoldCyan();
-				printf(tmp_sFormat,taskCalc_varResultado);
+				printf(tmp_sFormat,taskCalc_fResultado);
 				resetColor();
 			}
-			taskMenu_message(taskCalc_varResultado);
+			taskMenu_message(taskCalc_fResultado);
 			
 			taskCalc_state = STT_CALC_WAIT;
 			break;
@@ -94,7 +111,7 @@ void taskCalc_setState(int arg_state)
 
 void taskCalc_message(int arg_opcion, float arg_num1, float arg_num2)
 {	
-	if (taskCalc_debugMode)
+	if (taskCalc_iDebugMode)
 	{
 		char* tmp_sFormat = "\ntaskCalc_message(char %d, float %.4f, float %.4f)";
 		setColorBoldCyan();
@@ -102,8 +119,8 @@ void taskCalc_message(int arg_opcion, float arg_num1, float arg_num2)
 		resetColor();
 	}
 	
-	taskCalc_varNum1 = arg_num1;
-	taskCalc_varNum2 = arg_num2;
+	taskCalc_fNum1 = arg_num1;
+	taskCalc_fNum2 = arg_num2;
 
 	switch(arg_opcion)
 		
@@ -128,10 +145,8 @@ void taskCalc_message(int arg_opcion, float arg_num1, float arg_num2)
          }
 }
 
-void taskCalc_debugModeOn(){
-	taskCalc_debugMode = 1;
-}
 
-void taskCalc_debugModeOff(){
-        taskCalc_debugMode = 0;
+void taskCalc_setDebugMode(int arg_debugMode){
+        taskCalc_iDebugMode = arg_debugMode;
+	
 }

@@ -1,3 +1,6 @@
+calc
+*.out
+*.swp
 *.xoj
 *.txt
 0_1
